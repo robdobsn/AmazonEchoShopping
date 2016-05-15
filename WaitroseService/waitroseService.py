@@ -42,5 +42,7 @@ if __name__ == '__main__':
     # use_reloader=False avoids initialising objects twice
     # note that server is single-threaded - and it doesn't seem to help to turn theading on - maybe due to GIL
     # so every request has to return quickly and not block
-    app.run(debug=True, use_reloader=False)
+    # host=0.0.0.0 results in the machine's IP address being used
+    # as opposed to localhost for the web server
+    app.run(debug=True, use_reloader=False, host="0.0.0.0")
 
