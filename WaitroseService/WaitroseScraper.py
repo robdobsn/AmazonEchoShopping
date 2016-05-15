@@ -79,23 +79,23 @@ class WaitroseScraper():
 
                             return True
 
-                        except NoSuchElementException, TimeoutException:
+                        except WebDriverException:
                             logging.error("waitroseLogin() Cannot find logon-password after wait")
                             self.debugDumpPageSource()
 
-                    except NoSuchElementException, TimeoutException:
+                    except WebDriverException:
                         logging.error("waitroseLogin() Cannot find logon-password field")
                         self.debugDumpPageSource()
 
-                except NoSuchElementException, TimeoutException:
+                except WebDriverException:
                     logging.error("waitroseLogin() Cannot find logon-email after wait")
                     self.debugDumpPageSource()
 
-            except NoSuchElementException, TimeoutException:
+            except WebDriverException:
                 logging.error("waitroseLogin() Cannot find logon-email field")
                 self.debugDumpPageSource()
 
-        except NoSuchElementException, TimeoutException:
+        except WebDriverException:
             logging.error("waitroseLogin() Cannot find sign-in-register button")
             self.debugDumpPageSource()
 
