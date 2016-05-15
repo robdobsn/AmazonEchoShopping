@@ -52,32 +52,40 @@ class WaitroseScraper():
             elemLoginBtn.click()
 
             try:
-                elemLoginId = self.webDriver.find_element_by_id('logon-email')
-                elemLoginId.send_keys(username + Keys.RETURN)
+                webdriverui.WebDriverWait(self.webDriver, 20)\
+                        .until(EC.visibility_of_element_located((By.ID, "logon-email")))
 
                 try:
-                    webdriverui.WebDriverWait(self.webDriver, 10)\
-                            .until(EC.visibility_of_element_located((By.ID, "logon-password")))
+                    elemLoginId = self.webDriver.find_element_by_id('logon-email')
+                    elemLoginId.send_keys(username + Keys.RETURN)
 
                     try:
-                        elemLoginId = self.webDriver.find_element_by_id('logon-password')
-                        elemLoginId.send_keys(password + Keys.RETURN)
                         webdriverui.WebDriverWait(self.webDriver, 20)\
-                            .until(EC.visibility_of_element_located((By.CLASS_NAME, "trolley-total")))
-                        elem2 = self.webDriver.find_element_by_class_name('trolley-total')
-                        if elem2:
-                            logging.info("waitroseLogin() Basket found")
-                        else:
-                            logging.info("waitroseLogin() basket not found")
+                                .until(EC.visibility_of_element_located((By.ID, "logon-password")))
 
-                        return True
+                        try:
+                            elemLoginId = self.webDriver.find_element_by_id('logon-password')
+                            elemLoginId.send_keys(password + Keys.RETURN)
+                            webdriverui.WebDriverWait(self.webDriver, 20)\
+                                .until(EC.visibility_of_element_located((By.CLASS_NAME, "trolley-total")))
+                            elem2 = self.webDriver.find_element_by_class_name('trolley-total')
+                            if elem2:
+                                logging.info("waitroseLogin() Basket found")
+                            else:
+                                logging.info("waitroseLogin() basket not found")
+
+                            return True
+
+                        except NoSuchElementException:
+                            logging.error("waitroseLogin() Cannot find logon-password after wait")
+                            self.debugDumpPageSource()
 
                     except NoSuchElementException:
-                        logging.error("waitroseLogin() Cannot find Continue button")
+                        logging.error("waitroseLogin() Cannot find logon-password field")
                         self.debugDumpPageSource()
 
                 except NoSuchElementException:
-                    logging.error("waitroseLogin() Cannot find Continue button")
+                    logging.error("waitroseLogin() Cannot find logon-email after wait")
                     self.debugDumpPageSource()
 
             except NoSuchElementException:
