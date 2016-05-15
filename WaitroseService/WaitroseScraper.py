@@ -20,6 +20,10 @@ class WaitroseScraper():
         self.isInitalized = False
         self.isLoggedIn = False
 
+    def debugDumpPageSource(self):
+        with open("debugPageSource.html", "w") as debugDumpFile:
+           debugDumpFile.write(self.webDriver.page_source)
+
     # Start the web driver (runs the browser)
     def startWebDriver(self):
 
@@ -70,15 +74,19 @@ class WaitroseScraper():
 
                     except NoSuchElementException:
                         logging.error("waitroseLogin() Cannot find Continue button")
+                        self.debugDumpPageSource()
 
                 except NoSuchElementException:
                     logging.error("waitroseLogin() Cannot find Continue button")
+                    self.debugDumpPageSource()
 
             except NoSuchElementException:
                 logging.error("waitroseLogin() Cannot find logon-email field")
+                self.debugDumpPageSource()
 
         except NoSuchElementException:
             logging.error("waitroseLogin() Cannot find sign-in-register button")
+            self.debugDumpPageSource()
 
         return False
 
@@ -92,9 +100,11 @@ class WaitroseScraper():
                 .until(EC.visibility_of_element_located((By.CLASS_NAME, "trolley-total")))
         except TimeoutException:
             logging.error("Get basket summary timeout exception")
+            self.debugDumpPageSource()
             return None
         except WebDriverException:
             logging.error("Get basket summary webdriver element exception")
+            self.debugDumpPageSource()
             return None
 
         # Get basket total price
@@ -115,6 +125,7 @@ class WaitroseScraper():
                     logging.info("waitrose: Basket: num items=" + str(basketSummary["numItems"]))
         except WebDriverException:
             logging.error("waitrose: Get basket summary webdriver element exception")
+            self.debugDumpPageSource()
             return None
 
         # Return info found
@@ -136,6 +147,7 @@ class WaitroseScraper():
                 destDict[dictName] = rslt
         except:
             logging.error("waitrose: Error extracting element " + elemName + " " + className)
+            self.debugDumpPageSource()
         return rslt
 
     def getShoppingItems(self, isTrolleyPage):
@@ -232,6 +244,7 @@ class WaitroseScraper():
                 .until(EC.visibility_of_element_located((By.CLASS_NAME, "trolley-total")))
         except WebDriverException:
             logging.error("Wait for Trolley-Total webdriver element exception")
+            self.debugDumpPageSource()
             return None
 
         # Navigate to the basket contents
@@ -243,9 +256,11 @@ class WaitroseScraper():
                 .until(EC.visibility_of_element_located((By.ID, "my-trolley")))
         except NoSuchElementException:
             logging.error("Press view trolley button no such element")
+            self.debugDumpPageSource()
             return None
         except WebDriverException:
             logging.error("Press view trolley button webdriver element exception")
+            self.debugDumpPageSource()
             return None
 
         # Get the shopping items on the current page
@@ -259,6 +274,7 @@ class WaitroseScraper():
                 .until(EC.visibility_of_element_located((By.CLASS_NAME, "js-navbar-favourites")))
         except WebDriverException:
             logging.error("Wait for favourites button webdriver element exception")
+            self.debugDumpPageSource()
             return None
 
         # Navigate to the favourites
@@ -271,9 +287,11 @@ class WaitroseScraper():
                 .until(EC.visibility_of_element_located((By.CLASS_NAME, "products-grid")))
         except NoSuchElementException:
             logging.error("Press view favourites button no such element")
+            self.debugDumpPageSource()
             return None
         except WebDriverException:
             logging.error("Press view favourites button webdriver element exception")
+            self.debugDumpPageSource()
             return None
 
         # Get the shopping items on the current page
@@ -294,6 +312,7 @@ class WaitroseScraper():
         logging.info("Webdriver site title = " + self.webDriver.title)
         if not titleMustContainStr in self.webDriver.title:
             logging.error("Site " + siteUrl + " title doesn't contain " + titleMustContainStr)
+            self.debugDumpPageSource()
             return False
 
         # Handle login

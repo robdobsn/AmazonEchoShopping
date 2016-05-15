@@ -1,6 +1,7 @@
 .idea/
 config.json
 browserSession.json
+debugPageSource.html
 
 ### Python template
 # Byte-compiled / optimized / DLL files
