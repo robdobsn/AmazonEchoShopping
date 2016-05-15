@@ -49,6 +49,7 @@ class WaitroseScraper():
     def websiteLogin(self, username, password):
         try:
             elemLoginBtn = self.webDriver.find_element_by_id('headerSignInRegister')
+            logging.info("waitroseLogin() pressing Sign-In Button")
             elemLoginBtn.click()
 
             try:
@@ -57,6 +58,7 @@ class WaitroseScraper():
 
                 try:
                     elemLoginId = self.webDriver.find_element_by_id('logon-email')
+                    logging.info("waitroseLogin() entering username")
                     elemLoginId.send_keys(username + Keys.RETURN)
 
                     try:
@@ -65,34 +67,35 @@ class WaitroseScraper():
 
                         try:
                             elemLoginId = self.webDriver.find_element_by_id('logon-password')
+                            logging.info("waitroseLogin() entering password")
                             elemLoginId.send_keys(password + Keys.RETURN)
                             webdriverui.WebDriverWait(self.webDriver, 20)\
                                 .until(EC.visibility_of_element_located((By.CLASS_NAME, "trolley-total")))
                             elem2 = self.webDriver.find_element_by_class_name('trolley-total')
                             if elem2:
-                                logging.info("waitroseLogin() Basket found")
+                                logging.info("waitroseLogin() basket found")
                             else:
                                 logging.info("waitroseLogin() basket not found")
 
                             return True
 
-                        except NoSuchElementException:
+                        except NoSuchElementException, TimeoutException:
                             logging.error("waitroseLogin() Cannot find logon-password after wait")
                             self.debugDumpPageSource()
 
-                    except NoSuchElementException:
+                    except NoSuchElementException, TimeoutException:
                         logging.error("waitroseLogin() Cannot find logon-password field")
                         self.debugDumpPageSource()
 
-                except NoSuchElementException:
+                except NoSuchElementException, TimeoutException:
                     logging.error("waitroseLogin() Cannot find logon-email after wait")
                     self.debugDumpPageSource()
 
-            except NoSuchElementException:
+            except NoSuchElementException, TimeoutException:
                 logging.error("waitroseLogin() Cannot find logon-email field")
                 self.debugDumpPageSource()
 
-        except NoSuchElementException:
+        except NoSuchElementException, TimeoutException:
             logging.error("waitroseLogin() Cannot find sign-in-register button")
             self.debugDumpPageSource()
 
@@ -153,8 +156,11 @@ class WaitroseScraper():
                 rslt = re.sub(regexReplace, "", rslt)
             if destDict is not None:
                 destDict[dictName] = rslt
-        except:
+        except WebDriverException:
             logging.error("waitrose: Error extracting element " + elemName + " " + className)
+            self.debugDumpPageSource()
+        except:
+            logging.error("waitrose: Error (not webdriver) extracting element " + elemName + " " + className)
             self.debugDumpPageSource()
         return rslt
 
