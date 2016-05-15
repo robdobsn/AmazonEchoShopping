@@ -26,6 +26,15 @@ if __name__ == '__main__':
     appName = "Waitrose Service 0.1"
     logging.info(appName + " Starting")
 
+    # Start headless display if required
+    try:
+        from pyvirtualdisplay import Display
+        display = Display(visible=0, size=(800, 600))
+        display.start()
+        logging.info(appName + " is running headless")
+    except ImportError:
+        logging.info(appName + " is running on a GUI")
+
     # Start WaitroseManager
     shoppingManager = ShoppingManager()
 

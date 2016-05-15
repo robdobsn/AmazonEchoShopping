@@ -307,7 +307,8 @@ class WaitroseScraper():
             self.siteLogin("http://www.waitrose.com", username, password, "Waitrose")
 
         # Try to login again if not currently logged in
-        if not self.isLoggedIn:
-            self.isLoggedIn = self.websiteLogin(username, password)
+        if self.isInitalized:
+            if not self.isLoggedIn:
+                self.isLoggedIn = self.websiteLogin(username, password)
 
         return self.isLoggedIn

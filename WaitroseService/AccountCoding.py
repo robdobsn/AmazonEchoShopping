@@ -26,4 +26,7 @@ class AccountCoding():
             if not "password" in config[acname]:
                 return None
             return config[acname]
+        except EnvironmentError:
+            logging.error("Unable to open Config.json file")
+            return None
         return None
