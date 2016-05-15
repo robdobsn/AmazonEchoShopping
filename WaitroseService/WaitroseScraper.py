@@ -289,7 +289,9 @@ class WaitroseScraper():
         self.isInitalized = True
 
         # Go to URL
+        logging.info("Webdriver going to " + siteUrl)
         self.webDriver.get(siteUrl)
+        logging.info("Webdriver site title = " + self.webDriver.title)
         if not titleMustContainStr in self.webDriver.title:
             logging.error("Site " + siteUrl + " title doesn't contain " + titleMustContainStr)
             return False
