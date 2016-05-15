@@ -53,7 +53,7 @@ class WaitroseScraper():
             elemLoginBtn.click()
 
             try:
-                webdriverui.WebDriverWait(self.webDriver, 20)\
+                webdriverui.WebDriverWait(self.webDriver, 60)\
                         .until(EC.visibility_of_element_located((By.ID, "logon-email")))
 
                 try:
@@ -62,14 +62,14 @@ class WaitroseScraper():
                     elemLoginId.send_keys(username + Keys.RETURN)
 
                     try:
-                        webdriverui.WebDriverWait(self.webDriver, 20)\
+                        webdriverui.WebDriverWait(self.webDriver, 60)\
                                 .until(EC.visibility_of_element_located((By.ID, "logon-password")))
 
                         try:
                             elemLoginId = self.webDriver.find_element_by_id('logon-password')
                             logging.info("waitroseLogin() entering password")
                             elemLoginId.send_keys(password + Keys.RETURN)
-                            webdriverui.WebDriverWait(self.webDriver, 20)\
+                            webdriverui.WebDriverWait(self.webDriver, 60)\
                                 .until(EC.visibility_of_element_located((By.CLASS_NAME, "trolley-total")))
                             elem2 = self.webDriver.find_element_by_class_name('trolley-total')
                             if elem2:
