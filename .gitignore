@@ -2,6 +2,7 @@
 config.json
 browserSession.json
 debugPageSource.html
+AdminScripts/*
 
 ### Python template
 # Byte-compiled / optimized / DLL files

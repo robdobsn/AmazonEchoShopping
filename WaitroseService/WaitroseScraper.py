@@ -33,7 +33,7 @@ class WaitroseScraper():
 
         # Create WebDriver
         try:
-            self.webDriver = webdriver.Firefox()
+            self.webDriver = webdriver.Chrome()
         except WebDriverException:
             logging.error("startWebDriver() Failed to start")
             return False
