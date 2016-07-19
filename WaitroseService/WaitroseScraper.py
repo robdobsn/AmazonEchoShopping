@@ -4,7 +4,8 @@ __author__ = 'robdobsn'
 
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
-import selenium.webdriver.support.ui as webdriverui
+#import selenium.webdriver.support.ui as webdriverui
+from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException, WebDriverException, TimeoutException
 from selenium.webdriver.support import expected_conditions as EC
@@ -19,10 +20,36 @@ class WaitroseScraper():
         logging.info("Waitrose scraper starting")
         self.isInitalized = False
         self.isLoggedIn = False
+        self.webDriverType = "PhantomJS"
+        self.execUsingJS = True
+
+    def clickButtonByClassName(self, className):
+        if self.execUsingJS:
+            self.webDriver.execute_script("document.getElementsByClassName('" + className + "')[0].click()")
+        else:
+            btn = self.webDriver.find_element_by_class_name(className)
+            btn.click()
+
+    def clickButtonByXPath(self, xpath):
+        if self.execUsingJS:
+            self.webDriver.execute_script("return document.evaluate('" + xpath + "', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue.click()")
+        else:
+            btn = self.webDriver.find_element_by_xpath(xpath)
+            btn.click()
+
+    def sendKeysToFieldById(self, elemId, strToSend, pressEnterAfter):
+#       if self.execUsingJS:
+#            self.webDriver.execute_script("document.getElementsByClassName('" + elemId + "').value = '" + strToSend)
+#        else:
+        print("Sending keys to elemId " + elemId + " keys = " + strToSend)
+        field = self.webDriver.find_element_by_id(elemId)
+        print(field)
+        field.send_keys(strToSend + (Keys.RETURN if pressEnterAfter else ""))
 
     def debugDumpPageSource(self):
         with open("debugPageSource.html", "w") as debugDumpFile:
            debugDumpFile.write(self.webDriver.page_source)
+        self.webDriver.save_screenshot('debugPageImage.png')
 
     # Start the web driver (runs the browser)
     def startWebDriver(self):
@@ -32,11 +59,36 @@ class WaitroseScraper():
             json.dump({}, outfile)
 
         # Create WebDriver
-        try:
-            self.webDriver = webdriver.Chrome()
-        except WebDriverException:
-            logging.error("startWebDriver() Failed to start")
-            return False
+        if self.webDriverType == "Chrome":
+            try:
+                self.webDriver = webdriver.Chrome()
+            except WebDriverException:
+                logging.error("startWebDriver() Chrome Failed to start")
+                return False
+        elif self.webDriverType == "Firefox":
+            try:
+                self.webDriver = webdriver.Firefox()
+            except WebDriverException:
+                logging.error("startWebDriver() Firefox Failed to start")
+                return False
+        elif self.webDriverType == "PhantomJS":
+            try:
+                self.webDriver = webdriver.PhantomJS()  # or add to your PATH
+            except:
+                try:
+                    self.webDriver = webdriver.PhantomJS(
+                        executable_path='/usr/local/lib/node_modules/phantomjs/lib/phantom/bin/phantomjs')
+                except:
+                    try:
+                        self.webDriver = webdriver.PhantomJS(
+                            executable_path=r'C:\Users\rob_2\AppData\Roaming\npm\node_modules\phantomjs\lib\phantom\bin\phantomjs.exe')
+                    except:
+                        logging.error("Failed to load the PhantomJS webdriver")
+                        return False
+
+        # Set the window size (seems to be needed in phantomJS particularly
+        # This is probably because the website responds in mobile mode?
+        self.webDriver.set_window_size(1280,1024)
 
         # Save session info
         url = self.webDriver.command_executor._url
@@ -46,31 +98,44 @@ class WaitroseScraper():
 
         return True
 
-    def websiteLogin(self, username, password):
+    def websiteLogin(self, username, password, attemptIdx):
         try:
-            elemLoginBtn = self.webDriver.find_element_by_id('headerSignInRegister')
-            logging.info("waitroseLogin() pressing Sign-In Button")
-            elemLoginBtn.click()
+            self.webDriver.save_screenshot('debug1_'+str(attemptIdx)+'.png')
+            logging.info("Waiting for signInRegister button")
+            wait = WebDriverWait(self.webDriver, 30)
+            wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "js-sign-in-register")))
+            logging.info("waitroseLogin() pressing signInRegister button")
+            self.clickButtonByClassName('js-sign-in-register')
+            self.webDriver.save_screenshot('debug2_'+str(attemptIdx)+'.png')
 
             try:
-                webdriverui.WebDriverWait(self.webDriver, 60)\
-                        .until(EC.visibility_of_element_located((By.ID, "logon-email")))
+                print("Starting to wait for logon-email")
+                wait = WebDriverWait(self.webDriver, 30)
+                wait.until(EC.visibility_of_element_located((By.ID, "logon-email")))
+                print("Finished waiting for logon-email")
+                self.webDriver.save_screenshot('debug3_' + str(attemptIdx) + '.png')
 
                 try:
-                    elemLoginId = self.webDriver.find_element_by_id('logon-email')
                     logging.info("waitroseLogin() entering username")
-                    elemLoginId.send_keys(username + Keys.RETURN)
+                    self.sendKeysToFieldById('logon-email', username, False)
+                    self.clickButtonByXPath("//input[@type, 'button' and text()='Continue']")
+                    self.webDriver.save_screenshot('debug4_' + str(attemptIdx) + '.png')
 
                     try:
-                        webdriverui.WebDriverWait(self.webDriver, 60)\
-                                .until(EC.visibility_of_element_located((By.ID, "logon-password")))
+                        logging.info("waitroseLogin() waiting for logon-password visible")
+                        wait = WebDriverWait(self.webDriver, 60)
+                        wait.until(EC.visibility_of_element_located((By.ID, "logon-password")))
+                        self.webDriver.save_screenshot('debug5_' + str(attemptIdx) + '.png')
 
                         try:
-                            elemLoginId = self.webDriver.find_element_by_id('logon-password')
                             logging.info("waitroseLogin() entering password")
-                            elemLoginId.send_keys(password + Keys.RETURN)
-                            webdriverui.WebDriverWait(self.webDriver, 60)\
-                                .until(EC.visibility_of_element_located((By.CLASS_NAME, "trolley-total")))
+                            self.sendKeysToFieldById('logon-password', password, False)
+                            self.clickButtonById('logon-button-sign-in')
+                            self.webDriver.save_screenshot('debug6_' + str(attemptIdx) + '.png')
+                            logging.info("waitroseLogin() waiting for trolley-total to be visible")
+                            wait = WebDriverWait(self.webDriver, 60)
+                            wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "trolley-total")))
+                            self.webDriver.save_screenshot('debug7_' + str(attemptIdx) + '.png')
                             elem2 = self.webDriver.find_element_by_class_name('trolley-total')
                             if elem2:
                                 logging.info("waitroseLogin() basket found")
@@ -88,7 +153,7 @@ class WaitroseScraper():
                         self.debugDumpPageSource()
 
                 except WebDriverException:
-                    logging.error("waitroseLogin() Cannot find logon-email after wait")
+                    logging.error("waitroseLogin() Error entering logon-email")
                     self.debugDumpPageSource()
 
             except WebDriverException:
@@ -107,8 +172,8 @@ class WaitroseScraper():
 
         # Ensure we wait until the trolley-total is visible
         try:
-            webdriverui.WebDriverWait(self.webDriver, 20)\
-                .until(EC.visibility_of_element_located((By.CLASS_NAME, "trolley-total")))
+            wait = WebDriverWait(self.webDriver, 20)
+            wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "trolley-total")))
         except TimeoutException:
             logging.error("Get basket summary timeout exception")
             self.debugDumpPageSource()
@@ -254,8 +319,8 @@ class WaitroseScraper():
 
         # Ensure we wait until the trolley-total is visible
         try:
-            webdriverui.WebDriverWait(self.webDriver, 20)\
-                .until(EC.visibility_of_element_located((By.CLASS_NAME, "trolley-total")))
+            wait = WebDriverWait(self.webDriver, 20)
+            wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "trolley-total")))
         except WebDriverException:
             logging.error("Wait for Trolley-Total webdriver element exception")
             self.debugDumpPageSource()
@@ -263,11 +328,9 @@ class WaitroseScraper():
 
         # Navigate to the basket contents
         try:
-            BASKET_BUTTON_XPATH = '//div[@class="mini-trolley"]//a'
-            elemBasketBtn = self.webDriver.find_element_by_xpath(BASKET_BUTTON_XPATH)
-            elemBasketBtn.click()
-            webdriverui.WebDriverWait(self.webDriver, 30)\
-                .until(EC.visibility_of_element_located((By.ID, "my-trolley")))
+            self.clickButtonByXPath('//div[@class="mini-trolley"]//a')
+            wait = WebDriverWait(self.webDriver, 30)
+            wait.until(EC.visibility_of_element_located((By.ID, "my-trolley")))
         except NoSuchElementException:
             logging.error("Press view trolley button no such element")
             self.debugDumpPageSource()
@@ -284,8 +347,8 @@ class WaitroseScraper():
 
         # Ensure we wait until the favourites is visible
         try:
-            webdriverui.WebDriverWait(self.webDriver, 20)\
-                .until(EC.visibility_of_element_located((By.CLASS_NAME, "js-navbar-favourites")))
+            wait = WebDriverWait(self.webDriver, 20)
+            wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "js-navbar-favourites")))
         except WebDriverException:
             logging.error("Wait for favourites button webdriver element exception")
             self.debugDumpPageSource()
@@ -297,8 +360,8 @@ class WaitroseScraper():
             elemBasketBtn = self.webDriver.find_element_by_xpath(FAVOURITES_BUTTON_XPATH)
             print(elemBasketBtn)
             elemBasketBtn.click()
-            webdriverui.WebDriverWait(self.webDriver, 60)\
-                .until(EC.visibility_of_element_located((By.CLASS_NAME, "products-grid")))
+            wait = WebDriverWait(self.webDriver, 60)
+            wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "products-grid")))
         except NoSuchElementException:
             logging.error("Press view favourites button no such element")
             self.debugDumpPageSource()
@@ -330,7 +393,7 @@ class WaitroseScraper():
             return False
 
         # Handle login
-        self.isLoggedIn = self.websiteLogin(username, password)
+        self.isLoggedIn = self.websiteLogin(username, password, 1)
 
         # Succeeded so far
         return self.isLoggedIn
@@ -344,6 +407,6 @@ class WaitroseScraper():
         # Try to login again if not currently logged in
         if self.isInitalized:
             if not self.isLoggedIn:
-                self.isLoggedIn = self.websiteLogin(username, password)
+                self.isLoggedIn = self.websiteLogin(username, password, 2)
 
         return self.isLoggedIn
