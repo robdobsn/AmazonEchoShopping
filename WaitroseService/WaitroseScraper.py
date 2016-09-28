@@ -209,7 +209,7 @@ class WaitroseScraper():
                 reTotalElem = re.search("([0-9]{1,4}\.[0-9]{2})", totalElem.text)
                 if reTotalElem:
                     basketSummary["totalPrice"] = reTotalElem.group(1)
-                    logging.info("waitrose: Basket: total=£" + str(basketSummary["totalPrice"]))
+                    logging.info("waitrose: Basket: total=" + str(basketSummary["totalPrice"]))
 
             # Get number of basket items
             summaryElem = self.webDriver.find_element_by_class_name('trolley-summary')
