@@ -32,7 +32,9 @@ class WaitroseManager():
             if self.trolleyInfoReqd:
                 if self.waitroseScraper.ensureLoggedIn(self.username, self.password):
                     basketSummary = self.waitroseScraper.getBasketSummary()
-                    trolleyList = self.waitroseScraper.getTrolleyContents()
+                    trolleyList = []
+                    if int(float(basketSummary['numItems'])) > 0:
+                        trolleyList = self.waitroseScraper.getTrolleyContents()
                     with self.trolleyInfoLock:
                         self.trolleyInfo = {
                             "items": trolleyList,

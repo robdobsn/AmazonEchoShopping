@@ -4,7 +4,7 @@ __author__ = 'robdobsn'
 
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
-#import selenium.webdriver.support.ui as webdriverui
+import selenium.webdriver.support.ui as webdriverui
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException, WebDriverException, TimeoutException
@@ -21,7 +21,7 @@ class WaitroseScraper():
         self.isInitalized = False
         self.isLoggedIn = False
         self.webDriverType = "PhantomJS"
-        self.execUsingJS = True
+        self.execUsingJS = False
 
     def clickButtonByClassName(self, className):
         if self.execUsingJS:
@@ -37,17 +37,28 @@ class WaitroseScraper():
             btn = self.webDriver.find_element_by_xpath(xpath)
             btn.click()
 
-    def sendKeysToFieldById(self, elemId, strToSend, pressEnterAfter):
+    def clickButtonByCSSSelector(self, cssSelector):
+        btn = self.webDriver.find_element_by_css_selector(cssSelector)
+        btn.click()
+
+    def checkButtonEnabledByCSSSelector(self, cssSelector):
+        btn = self.webDriver.find_element_by_css_selector(cssSelector)
+        return btn.is_enabled() and btn.is_displayed()
+
+    def sendKeysToFieldById(self, elemId, strToSend, pressEnterAfter, clearFirst):
 #       if self.execUsingJS:
 #            self.webDriver.execute_script("document.getElementsByClassName('" + elemId + "').value = '" + strToSend)
 #        else:
         print("Sending keys to elemId " + elemId + " keys = " + strToSend)
         field = self.webDriver.find_element_by_id(elemId)
         print(field)
+        if (clearFirst):
+            field.send_keys(Keys.CONTROL + "a")
+            field.send_keys(Keys.DELETE)
         field.send_keys(strToSend + (Keys.RETURN if pressEnterAfter else ""))
 
-    def debugDumpPageSource(self):
-        with open("debugPageSource.html", "w") as debugDumpFile:
+    def debugDumpPageSource(self, filenameExtra=""):
+        with open("debugPageSource" + filenameExtra + ".html", "w") as debugDumpFile:
            debugDumpFile.write(self.webDriver.page_source)
         self.webDriver.save_screenshot('debugPageImage.png')
 
@@ -77,14 +88,18 @@ class WaitroseScraper():
             except:
                 try:
                     self.webDriver = webdriver.PhantomJS(
-                        executable_path='/usr/local/lib/node_modules/phantomjs/lib/phantom/bin/phantomjs')
+                        executable_path='C:\ProgramData\PhantomJS\bin')
                 except:
                     try:
                         self.webDriver = webdriver.PhantomJS(
-                            executable_path=r'C:\Users\rob_2\AppData\Roaming\npm\node_modules\phantomjs\lib\phantom\bin\phantomjs.exe')
+                            executable_path='/usr/local/lib/node_modules/phantomjs/lib/phantom/bin/phantomjs')
                     except:
-                        logging.error("Failed to load the PhantomJS webdriver")
-                        return False
+                        try:
+                            self.webDriver = webdriver.PhantomJS(
+                                executable_path=r'C:\Users\rob_2\AppData\Roaming\npm\node_modules\phantomjs\lib\phantom\bin\phantomjs.exe')
+                        except:
+                            logging.error("Failed to load the PhantomJS webdriver")
+                            return False
 
         # Set the window size (seems to be needed in phantomJS particularly
         # This is probably because the website responds in mobile mode?
@@ -117,9 +132,12 @@ class WaitroseScraper():
 
                 try:
                     logging.info("waitroseLogin() entering username")
-                    self.sendKeysToFieldById('logon-email', username, False)
-                    self.clickButtonByXPath("//input[@type, 'button' and text()='Continue']")
+                    self.debugDumpPageSource("contbutton")
+                    self.sendKeysToFieldById('logon-email', username, False, True)
                     self.webDriver.save_screenshot('debug4_' + str(attemptIdx) + '.png')
+                    # self.clickButtonByXPath("//input[@type='button' and @value='Continue']")
+                    if (self.checkButtonEnabledByCSSSelector("input[value='Continue'][type='button']")):
+                        self.clickButtonByCSSSelector("input[value='Continue'][type='button']")
 
                     try:
                         logging.info("waitroseLogin() waiting for logon-password visible")
@@ -129,8 +147,9 @@ class WaitroseScraper():
 
                         try:
                             logging.info("waitroseLogin() entering password")
-                            self.sendKeysToFieldById('logon-password', password, False)
-                            self.clickButtonById('logon-button-sign-in')
+                            self.sendKeysToFieldById('logon-password', password, False, True)
+                            #self.clickButtonById('logon-button-sign-in')
+                            self.clickButtonByCSSSelector("input[value='Sign in'][type='button']")
                             self.webDriver.save_screenshot('debug6_' + str(attemptIdx) + '.png')
                             logging.info("waitroseLogin() waiting for trolley-total to be visible")
                             wait = WebDriverWait(self.webDriver, 60)
@@ -144,24 +163,24 @@ class WaitroseScraper():
 
                             return True
 
-                        except WebDriverException:
-                            logging.error("waitroseLogin() Cannot find logon-password after wait")
+                        except WebDriverException as err:
+                            logging.error("waitroseLogin() Cannot find logon-password after wait " + err.msg)
                             self.debugDumpPageSource()
 
-                    except WebDriverException:
-                        logging.error("waitroseLogin() Cannot find logon-password field")
+                    except WebDriverException as err:
+                        logging.error("waitroseLogin() Cannot find logon-password field" + err.msg)
                         self.debugDumpPageSource()
 
-                except WebDriverException:
-                    logging.error("waitroseLogin() Error entering logon-email")
+                except WebDriverException as err:
+                    logging.error("waitroseLogin() Error entering logon-email" + err.msg)
                     self.debugDumpPageSource()
 
-            except WebDriverException:
-                logging.error("waitroseLogin() Cannot find logon-email field")
+            except WebDriverException as err:
+                logging.error("waitroseLogin() Cannot find logon-email field" + err.msg)
                 self.debugDumpPageSource()
 
-        except WebDriverException:
-            logging.error("waitroseLogin() Cannot find sign-in-register button")
+        except WebDriverException as err:
+            logging.error("waitroseLogin() Cannot find sign-in-register button" + err.msg)
             self.debugDumpPageSource()
 
         return False
@@ -233,11 +252,12 @@ class WaitroseScraper():
 
         # Make sure all items on the page are loaded - lazy loader
         try:
+            self.debugDumpPageSource("m-product")
             webdriverui.WebDriverWait(self.webDriver, 10)\
                 .until(EC.visibility_of_element_located((By.CLASS_NAME, "m-product")))
         except WebDriverException:
             logging.error("Wait for m-product webdriver element exception")
-            return False
+            return []
         
         productsFound = self.webDriver.find_elements_by_class_name("m-product")
         print("waitrose: Lazy loading products - currently " + str(len(productsFound)) + " found")

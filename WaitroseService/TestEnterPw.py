@@ -1,16 +1,70 @@
 import sys
-
-#reload(sys)
-#sys.setdefaultencoding('utf-8')
+import os
+from datetime import datetime
+from os.path import expanduser
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, WebDriverException, TimeoutException
+import logging
+
+def startWebDriver(webDriverType):
+    # Create WebDriver
+    webDriver = None
+    if webDriverType == "Chrome":
+        try:
+            webDriver = webdriver.Chrome()
+        except WebDriverException as excp:
+            logging.error("startWebDriver() Chrome Failed to start", format(excp))
+            return False
+    elif webDriverType == "Firefox":
+        try:
+            webDriver = webdriver.Firefox()
+        except WebDriverException as excp:
+            logging.error("startWebDriver() Firefox Failed to start", format(excp))
+            return False
+    elif webDriverType == "PhantomJS":
+        # Get home folder
+        home = expanduser("~")
+        try:
+            webDriver = webdriver.PhantomJS()  # or add to your PATH
+        except WebDriverException as excp:
+            try:
+                webDriver = webdriver.PhantomJS(
+                    executable_path='/usr/local/lib/node_modules/phantomjs/lib/phantom/bin/phantomjs')
+            except WebDriverException as excp:
+                try:
+                    webDriver = webdriver.PhantomJS(
+                        executable_path=home + r'\AppData\Roaming\npm\node_modules\phantomjs\lib\phantom\bin\phantomjs.exe')
+                except WebDriverException as excp:
+                    logging.error("Failed to load the PhantomJS webdriver", format(excp))
+                    return False
+
+    # Set the window size (seems to be needed in phantomJS particularly
+    # This is probably because the website responds in mobile mode?
+    if webDriver is not None:
+        webDriver.set_window_size(1280, 1024)
+    return webDriver
+
+#driver = startWebDriver("PhantomJS")
+
+# def is_exe(fpath):
+#     return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+#
+# print(os.environ["PATH"])
+# for path in os.environ["PATH"].split(os.pathsep):
+#     path = path.strip('"')
+#     exe_file = os.path.join(path, "phantomjs.exe")
+# #    fpath, fname = os.path.split("phantomjs.exe")
+# def is_exe(fpath):
+#     return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+#print(os.path)
 
 driver = webdriver.PhantomJS()
-
+driver.set_window_size(1280, 1024)
 
 def debugDumpPageSource(fileName):
     with open(fileName, "w") as debugDumpFile:
